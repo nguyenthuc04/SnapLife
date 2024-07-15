@@ -1,60 +1,117 @@
 package com.snapco.snaplife.ui.view.fragment.camera
 
+import android.content.ContentValues
+import android.content.Context
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.Toast
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
+import com.otaliastudios.cameraview.CameraListener
+import com.otaliastudios.cameraview.CameraView
+import com.otaliastudios.cameraview.PictureResult
 import com.snapco.snaplife.R
+import com.snapco.snaplife.ui.viewmodel.CameraViewModel
+import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [CameraFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class CameraFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+    private lateinit var cameraView: CameraView
+    private lateinit var captureButton: Button
+    private lateinit var switchCameraButton: Button
+    private val cameraViewModel: CameraViewModel by viewModels()
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        val view = inflater.inflate(R.layout.fragment_camera, container, false)
+        cameraView = view.findViewById(R.id.cameraView)
+        captureButton = view.findViewById(R.id.btnCapture)
+        switchCameraButton = view.findViewById(R.id.btnSwitchCamera)
+
+        // Thiết lập CameraView
+        cameraView.setLifecycleOwner(viewLifecycleOwner)
+        cameraView.addCameraListener(object : CameraListener() {
+            override fun onPictureTaken(result: PictureResult) {
+                super.onPictureTaken(result)
+                savePicture(result)
+            }
+        })
+
+        // Xử lý sự kiện nhấn nút chụp ảnh
+        captureButton.setOnClickListener {
+            cameraView.takePicture()
+        }
+
+        // Xử lý sự kiện nhấn nút chuyển đổi camera
+        switchCameraButton.setOnClickListener {
+            cameraViewModel.switchCamera()
+        }
+
+        // Quan sát thay đổi từ ViewModel
+        cameraViewModel.facing.observe(viewLifecycleOwner, Observer { facing ->
+            cameraView.facing = facing
+        })
+
+        return view
+    }
+
+    private fun savePicture(result: PictureResult) {
+        result.toFile(getTemporaryFile(requireContext())) { file ->
+            if (file != null) {
+                saveToGallery(file)
+            } else {
+                Toast.makeText(context, "Failed to save picture", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater ,container: ViewGroup? ,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_camera ,container ,false)
+    private fun getTemporaryFile(context: Context): File {
+        val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile("TEMP_", ".jpg", storageDir)
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment CameraFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String ,param2: String) =
-            CameraFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1 ,param1)
-                    putString(ARG_PARAM2 ,param2)
+    private fun saveToGallery(file: File) {
+        val resolver = requireContext().contentResolver
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, file.name)
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+        }
+
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+
+        if (uri != null) {
+            try {
+                val outputStream = resolver.openOutputStream(uri)
+                outputStream?.use { stream ->
+                    FileInputStream(file).use { inputStream ->
+                        inputStream.copyTo(stream)
+                    }
                 }
+                Toast.makeText(context, "Picture saved to gallery", Toast.LENGTH_SHORT).show()
+            } catch (e: IOException) {
+                Toast.makeText(context, "Failed to save picture: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                file.delete()
             }
+        } else {
+            Toast.makeText(context, "Failed to create new MediaStore record", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        cameraView.destroy()
     }
 }
