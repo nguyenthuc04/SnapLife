@@ -41,6 +41,8 @@ android {
 
 dependencies {
 
+    implementation ("com.otaliastudios:cameraview:2.7.2")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
