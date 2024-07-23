@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="100dp"
+    android:layout_height="100dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_gravity="center"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_gravity="center">
+
+        <ImageView
+            android:id="@+id/userProfile_id"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="3dp"
+            android:padding="2dp"
+            android:background="@drawable/bg_round_border"
+            android:src="@drawable/insta_logo"/>
+        <ImageView
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:backgroundTint="@color/purple_700"
+            android:background="@drawable/bg_round"
+            app:tint="@color/white"
+            android:layout_gravity="bottom|end"
+            android:src="@drawable/ic_plus"/>
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/title_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Your Story"
+        android:textColor="@color/black"
+        android:gravity="center"
+        android:textSize="12sp"/>
+</LinearLayout>

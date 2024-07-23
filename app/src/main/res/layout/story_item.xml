@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="100dp"
+    android:layout_height="100dp"
+    android:layout_gravity="center"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_gravity="center"
+        android:background="@drawable/bg_round_gradient">
+
+        <ImageView
+            android:id="@+id/userProfile_id"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="3dp"
+            android:padding="4dp"
+            android:background="@drawable/bg_round"
+            android:src="@drawable/insta_logo"/>
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/title_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Username"
+        android:textColor="@color/black"
+        android:gravity="center"
+        android:textSize="12sp"/>
+</LinearLayout>
