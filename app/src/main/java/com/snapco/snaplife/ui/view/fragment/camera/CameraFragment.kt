@@ -16,6 +16,7 @@ import androidx.lifecycle.Observer
 import com.otaliastudios.cameraview.CameraListener
 import com.otaliastudios.cameraview.CameraView
 import com.otaliastudios.cameraview.PictureResult
+import com.otaliastudios.cameraview.VideoResult
 import com.snapco.snaplife.R
 import com.snapco.snaplife.ui.viewmodel.CameraViewModel
 import java.io.File
@@ -27,6 +28,7 @@ class CameraFragment : Fragment() {
 
     private lateinit var cameraView: CameraView
     private lateinit var captureButton: Button
+    private lateinit var recordButton: Button
     private lateinit var switchCameraButton: Button
     private val cameraViewModel: CameraViewModel by viewModels()
 
@@ -37,6 +39,7 @@ class CameraFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_camera, container, false)
         cameraView = view.findViewById(R.id.cameraView)
         captureButton = view.findViewById(R.id.btnCapture)
+        recordButton = view.findViewById(R.id.btnrecord)
         switchCameraButton = view.findViewById(R.id.btnSwitchCamera)
 
         // Thiết lập CameraView
@@ -46,11 +49,27 @@ class CameraFragment : Fragment() {
                 super.onPictureTaken(result)
                 savePicture(result)
             }
+
+            override fun onVideoTaken(result: VideoResult) {
+                super.onVideoTaken(result)
+                saveVideo(result)
+            }
         })
 
         // Xử lý sự kiện nhấn nút chụp ảnh
         captureButton.setOnClickListener {
             cameraView.takePicture()
+        }
+
+        // Xử lý sự kiện nhấn nút ghi video
+        recordButton.setOnClickListener {
+            if (cameraViewModel.isRecording.value == true) {
+                cameraView.stopVideo()
+                cameraViewModel.stopRecording()
+            } else {
+                cameraView.takeVideoSnapshot(getTemporaryFile(requireContext(), "video"))
+                cameraViewModel.startRecording()
+            }
         }
 
         // Xử lý sự kiện nhấn nút chuyển đổi camera
@@ -63,33 +82,50 @@ class CameraFragment : Fragment() {
             cameraView.facing = facing
         })
 
+        cameraViewModel.isRecording.observe(viewLifecycleOwner, Observer { isRecording ->
+            recordButton.text = if (isRecording) "Stop" else "Record"
+        })
+
         return view
     }
 
+    private fun getTemporaryFile(context: Context, type: String): File {
+        val storageDir: File? = context.getExternalFilesDir(
+            if (type == "video") Environment.DIRECTORY_MOVIES else Environment.DIRECTORY_PICTURES)
+        return File.createTempFile("TEMP_", if (type == "video") ".mp4" else ".jpg", storageDir)
+    }
+
     private fun savePicture(result: PictureResult) {
-        result.toFile(getTemporaryFile(requireContext())) { file ->
+        result.toFile(getTemporaryFile(requireContext(), "picture")) { file ->
             if (file != null) {
-                saveToGallery(file)
+                saveToGallery(file, "image/jpeg", Environment.DIRECTORY_PICTURES)
             } else {
                 Toast.makeText(context, "Failed to save picture", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    private fun getTemporaryFile(context: Context): File {
-        val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return File.createTempFile("TEMP_", ".jpg", storageDir)
+    private fun saveVideo(result: VideoResult) {
+        val file = result.file
+        if (file != null) {
+            saveToGallery(file, "video/mp4", Environment.DIRECTORY_MOVIES)
+        } else {
+            Toast.makeText(context, "Failed to save video", Toast.LENGTH_SHORT).show()
+        }
     }
 
-    private fun saveToGallery(file: File) {
+    private fun saveToGallery(file: File, mimeType: String, directory: String) {
         val resolver = requireContext().contentResolver
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, file.name)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+            put(MediaStore.MediaColumns.RELATIVE_PATH, directory)
         }
 
-        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+        val uri = resolver.insert(
+            if (mimeType.startsWith("image")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            else MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            contentValues)
 
         if (uri != null) {
             try {
@@ -99,9 +135,9 @@ class CameraFragment : Fragment() {
                         inputStream.copyTo(stream)
                     }
                 }
-                Toast.makeText(context, "Picture saved to gallery", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, if (mimeType.startsWith("image")) "Picture saved to gallery" else "Video saved to gallery", Toast.LENGTH_SHORT).show()
             } catch (e: IOException) {
-                Toast.makeText(context, "Failed to save picture: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Failed to save ${if (mimeType.startsWith("image")) "picture" else "video"}: ${e.message}", Toast.LENGTH_SHORT).show()
             } finally {
                 file.delete()
             }
