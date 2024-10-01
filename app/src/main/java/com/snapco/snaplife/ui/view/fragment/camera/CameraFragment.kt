@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
@@ -27,7 +28,7 @@ import java.io.IOException
 class CameraFragment : Fragment() {
 
     private lateinit var cameraView: CameraView
-    private lateinit var captureButton: Button
+    private lateinit var captureButton: ImageView
     private lateinit var recordButton: Button
     private lateinit var switchCameraButton: Button
     private val cameraViewModel: CameraViewModel by viewModels()
