@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "718165906423",
+    "project_id": "snaplife-9a615",
+    "storage_bucket": "snaplife-9a615.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:718165906423:android:8707e3de2b3b42171194f2",
+        "android_client_info": {
+          "package_name": "com.snapco.snaplife"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCepv8kflMplKK2jnff2e8eTtW-AwqP39Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
